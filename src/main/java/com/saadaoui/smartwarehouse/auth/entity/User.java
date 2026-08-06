@@ -1,4 +1,4 @@
-package com.saadaoui.smartwarehouse.entity;
+package com.saadaoui.smartwarehouse.auth.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;

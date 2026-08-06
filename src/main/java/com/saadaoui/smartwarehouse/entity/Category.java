@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "categories")
+@Table
 @Getter
 @Setter
 @NoArgsConstructor
@@ -35,9 +35,7 @@ public class Category {
     @Column(nullable = false)
     private Boolean active = true;
 
-    //@OneToMany(mappedBy = "category")
-    @Builder.Default
-   // private List<Product> products = new ArrayList<>();
+
 
     @CreationTimestamp
     @Column(updatable = false)

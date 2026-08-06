@@ -1,6 +1,7 @@
 package com.saadaoui.smartwarehouse.category.repository;
 
-import com.saadaoui.smartwarehouse.auth.entity.Category;
+
+import com.saadaoui.smartwarehouse.entity.Category;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
