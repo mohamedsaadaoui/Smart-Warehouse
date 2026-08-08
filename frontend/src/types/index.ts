@@ -55,6 +55,8 @@ export interface Product {
   status: ProductStatus
   categoryId: string
   categoryName: string
+  supplierId: string | null
+  supplierName: string | null
   active: boolean
   createdAt: string
   updatedAt: string
@@ -68,7 +70,69 @@ export interface ProductRequest {
   quantity: number
   minStock: number
   categoryId: string
+  supplierId?: string
   active?: boolean
+}
+
+export interface Supplier {
+  id: string
+  name: string
+  contactName: string | null
+  email: string | null
+  phone: string | null
+  address: string | null
+  active: boolean
+  productCount: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface SupplierRequest {
+  name: string
+  contactName?: string
+  email?: string
+  phone?: string
+  address?: string
+  active?: boolean
+}
+
+export type MovementType = 'INBOUND' | 'OUTBOUND' | 'ADJUSTMENT'
+
+export interface StockMovement {
+  id: string
+  productId: string
+  productName: string
+  sku: string
+  type: MovementType
+  quantity: number
+  beforeQuantity: number
+  afterQuantity: number
+  reason: string
+  performedBy: string
+  createdAt: string
+}
+
+export interface MovementRequest {
+  productId: string
+  quantity: number
+  reason: string
+}
+
+export interface RecentMovement {
+  id: string
+  productName: string
+  sku: string
+  type: MovementType
+  quantity: number
+  reason: string
+  performedBy: string
+  createdAt: string
+}
+
+export interface MonthlyMovementStats {
+  month: string
+  inbound: number
+  outbound: number
 }
 
 export interface LowStockProduct {
@@ -91,4 +155,6 @@ export interface DashboardSummary {
   outOfStockCount: number
   lowStockProducts: LowStockProduct[]
   productsPerCategory: CategoryProductCount[]
+  recentMovements: RecentMovement[]
+  monthlyMovements: MonthlyMovementStats[]
 }

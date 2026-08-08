@@ -18,8 +18,9 @@ import {
   Switch,
   TextField,
 } from '@mui/material'
-import type { Category, Product, ProductRequest } from '../../types'
+import type { Category, Product, ProductRequest, Supplier } from '../../types'
 import { categoryApi } from '../../api/categoryApi'
+import { supplierApi } from '../../api/supplierApi'
 
 const productSchema = z.object({
   name: z
@@ -35,6 +36,7 @@ const productSchema = z.object({
     .max(500, 'Description must be at most 500 characters')
     .optional(),
   categoryId: z.string().min(1, 'Category is required'),
+  supplierId: z.string().optional(),
   price: z.coerce.number().min(0, 'Price must be positive'),
   quantity: z.coerce.number().int('Quantity must be an integer').min(0, 'Quantity must be positive'),
   minStock: z.coerce
@@ -63,6 +65,7 @@ export default function ProductFormDialog({
   onSubmit,
 }: ProductFormDialogProps) {
   const [categories, setCategories] = useState<Category[]>([])
+  const [suppliers, setSuppliers] = useState<Supplier[]>([])
 
   const {
     register,
@@ -77,6 +80,7 @@ export default function ProductFormDialog({
       sku: '',
       description: '',
       categoryId: '',
+      supplierId: '',
       price: 0,
       quantity: 0,
       minStock: 0,
@@ -91,6 +95,7 @@ export default function ProductFormDialog({
         sku: product?.sku ?? '',
         description: product?.description ?? '',
         categoryId: product?.categoryId ?? '',
+        supplierId: product?.supplierId ?? '',
         price: product?.price ?? 0,
         quantity: product?.quantity ?? 0,
         minStock: product?.minStock ?? 0,
@@ -105,6 +110,10 @@ export default function ProductFormDialog({
         .getAll({ page: 0, size: 100, sortBy: 'name', direction: 'asc' })
         .then((page) => setCategories(page.content))
         .catch(() => setCategories([]))
+      supplierApi
+        .getAll({ page: 0, size: 100, sortBy: 'name', direction: 'asc' })
+        .then((page) => setSuppliers(page.content))
+        .catch(() => setSuppliers([]))
     }
   }, [open])
 
@@ -114,6 +123,7 @@ export default function ProductFormDialog({
       sku: values.sku,
       description: values.description || undefined,
       categoryId: values.categoryId,
+      supplierId: values.supplierId || undefined,
       price: values.price,
       quantity: values.quantity,
       minStock: values.minStock,
@@ -158,6 +168,30 @@ export default function ProductFormDialog({
                       {categories.map((category) => (
                         <MenuItem key={category.id} value={category.id}>
                           {category.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                )}
+              />
+              <Controller
+                name="supplierId"
+                control={control}
+                render={({ field }) => (
+                  <FormControl fullWidth>
+                    <InputLabel>Supplier</InputLabel>
+                    <Select
+                      label="Supplier"
+                      value={field.value}
+                      onChange={field.onChange}
+                      displayEmpty
+                    >
+                      <MenuItem value="">
+                        <em>None</em>
+                      </MenuItem>
+                      {suppliers.map((supplier) => (
+                        <MenuItem key={supplier.id} value={supplier.id}>
+                          {supplier.name}
                         </MenuItem>
                       ))}
                     </Select>

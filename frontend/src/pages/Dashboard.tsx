@@ -22,18 +22,30 @@ import {
   Cell,
   Tooltip,
   Legend,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
 } from 'recharts'
 import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined'
 import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined'
 import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined'
 import CategoryOutlinedIcon from '@mui/icons-material/CategoryOutlined'
+import SwapVertOutlinedIcon from '@mui/icons-material/SwapVertOutlined'
 import { Link as RouterLink } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { dashboardApi } from '../api/dashboardApi'
-import type { DashboardSummary } from '../types'
+import type { DashboardSummary, MovementType } from '../types'
 import Loading from '../components/common/Loading'
 
 const PIE_COLORS = ['#4f46e5', '#059669', '#d97706', '#e11d48', '#0284c7', '#7c3aed']
+
+const MOVEMENT_LABELS: Record<MovementType, string> = {
+  INBOUND: 'Stock in',
+  OUTBOUND: 'Stock out',
+  ADJUSTMENT: 'Adjustment',
+}
 
 interface StatCardProps {
   label: string
@@ -252,6 +264,108 @@ export default function Dashboard() {
                   </Typography>
                 </Box>
               )}
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      <Grid container spacing={3} sx={{ mt: 0 }}>
+        <Grid item xs={12} lg={8}>
+          <Card>
+            <CardHeader
+              title="Stock movements"
+              subheader="Inbound vs outbound over the last 6 months"
+              avatar={<SwapVertOutlinedIcon color="primary" />}
+            />
+            <CardContent>
+              {summary && summary.monthlyMovements.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={summary.monthlyMovements}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis allowDecimals={false} />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="inbound" name="Stock in" fill="#059669" />
+                    <Bar dataKey="outbound" name="Stock out" fill="#e11d48" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <Box sx={{ py: 6, textAlign: 'center' }}>
+                  <Typography variant="body2" color="text.secondary">
+                    No movements recorded yet
+                  </Typography>
+                </Box>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} lg={4}>
+          <Card>
+            <CardHeader
+              title="Recent movements"
+              subheader="Latest warehouse activity"
+            />
+            <CardContent sx={{ p: 0 }}>
+              {summary && summary.recentMovements.length > 0 ? (
+                <TableContainer>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>
+                          <b>Product</b>
+                        </TableCell>
+                        <TableCell align="right">
+                          <b>Qty</b>
+                        </TableCell>
+                        <TableCell align="right">
+                          <b>Type</b>
+                        </TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {summary.recentMovements.map((movement) => (
+                        <TableRow key={movement.id} hover>
+                          <TableCell>
+                            <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                              <span>{movement.productName}</span>
+                              <Typography variant="caption" color="text.secondary">
+                                {new Date(movement.createdAt).toLocaleString()}
+                              </Typography>
+                            </Box>
+                          </TableCell>
+                          <TableCell align="right">{movement.quantity}</TableCell>
+                          <TableCell align="right">
+                            <Chip
+                              label={MOVEMENT_LABELS[movement.type]}
+                              color={
+                                movement.type === 'INBOUND'
+                                  ? 'success'
+                                  : movement.type === 'OUTBOUND'
+                                    ? 'error'
+                                    : 'warning'
+                              }
+                              size="small"
+                            />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              ) : (
+                <Box sx={{ p: 3 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    No movements recorded yet.
+                  </Typography>
+                </Box>
+              )}
+              <Box sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+                <Link component={RouterLink} to="/movements" underline="hover">
+                  View all movements
+                </Link>
+              </Box>
             </CardContent>
           </Card>
         </Grid>

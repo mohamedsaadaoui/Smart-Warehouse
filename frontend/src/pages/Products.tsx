@@ -133,6 +133,7 @@ export default function Products() {
     { id: 'name', label: 'Name', render: (row) => <b>{row.name}</b> },
     { id: 'sku', label: 'SKU', render: (row) => <span style={{ fontFamily: 'monospace' }}>{row.sku}</span> },
     { id: 'categoryName', label: 'Category', render: (row) => row.categoryName ?? '—' },
+    { id: 'supplierName', label: 'Supplier', render: (row) => row.supplierName ?? '—' },
     {
       id: 'price',
       label: 'Price',

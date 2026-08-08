@@ -3,6 +3,7 @@ package com.saadaoui.smartwarehouse.product.service.impl;
 import com.saadaoui.smartwarehouse.category.repository.CategoryRepository;
 import com.saadaoui.smartwarehouse.entity.Category;
 import com.saadaoui.smartwarehouse.entity.Product;
+import com.saadaoui.smartwarehouse.entity.Supplier;
 import com.saadaoui.smartwarehouse.exception.DuplicateResourceException;
 import com.saadaoui.smartwarehouse.exception.ResourceNotFoundException;
 import com.saadaoui.smartwarehouse.product.dto.ProductRequest;
@@ -11,8 +12,10 @@ import com.saadaoui.smartwarehouse.product.dto.ProductStatus;
 import com.saadaoui.smartwarehouse.product.mapper.ProductMapper;
 import com.saadaoui.smartwarehouse.product.repository.ProductRepository;
 import com.saadaoui.smartwarehouse.product.service.ProductService;
+import com.saadaoui.smartwarehouse.supplier.repository.SupplierRepository;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -23,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
@@ -30,6 +34,8 @@ public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
 
     private final CategoryRepository categoryRepository;
+
+    private final SupplierRepository supplierRepository;
 
     private final ProductMapper productMapper;
 
@@ -43,8 +49,13 @@ public class ProductServiceImpl implements ProductService {
 
         Product product = productMapper.toEntity(request);
         product.setCategory(findCategory(request.getCategoryId()));
+        product.setSupplier(findSupplier(request.getSupplierId()));
 
-        return productMapper.toResponse(productRepository.save(product));
+        Product saved = productRepository.save(product);
+
+        log.info("Product created: {} (sku={}, id={})", saved.getName(), saved.getSku(), saved.getId());
+
+        return productMapper.toResponse(saved);
     }
 
     @Override
@@ -66,8 +77,13 @@ public class ProductServiceImpl implements ProductService {
         product.setMinStock(request.getMinStock());
         product.setActive(request.getActive());
         product.setCategory(findCategory(request.getCategoryId()));
+        product.setSupplier(findSupplier(request.getSupplierId()));
 
-        return productMapper.toResponse(productRepository.save(product));
+        Product saved = productRepository.save(product);
+
+        log.info("Product updated: {} (id={})", saved.getName(), saved.getId());
+
+        return productMapper.toResponse(saved);
     }
 
     @Override
@@ -98,12 +114,24 @@ public class ProductServiceImpl implements ProductService {
         }
 
         productRepository.deleteById(id);
+
+        log.info("Product deleted: {}", id);
     }
 
     private Category findCategory(UUID categoryId) {
 
         return categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
+    }
+
+    private Supplier findSupplier(UUID supplierId) {
+
+        if (supplierId == null) {
+            return null;
+        }
+
+        return supplierRepository.findById(supplierId)
+                .orElseThrow(() -> new ResourceNotFoundException("Supplier not found"));
     }
 
     private Specification<Product> buildSpecification(

@@ -31,6 +31,10 @@ public class ProductResponse {
 
     private String categoryName;
 
+    private UUID supplierId;
+
+    private String supplierName;
+
     private Boolean active;
 
     private LocalDateTime createdAt;

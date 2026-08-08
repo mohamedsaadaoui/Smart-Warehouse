@@ -21,4 +21,8 @@ public class DashboardSummaryResponse {
 
     private List<CategoryProductCount> productsPerCategory;
 
+    private List<RecentMovementResponse> recentMovements;
+
+    private List<MonthlyMovementStats> monthlyMovements;
+
 }

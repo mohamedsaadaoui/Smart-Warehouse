@@ -39,6 +39,8 @@ public class ProductRequest {
     @NotNull(message = "Category is required")
     private UUID categoryId;
 
+    private UUID supplierId;
+
     private Boolean active = true;
 
 }
