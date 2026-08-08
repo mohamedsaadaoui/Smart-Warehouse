@@ -1,0 +1,37 @@
+import { lazy, Suspense } from 'react'
+import { Routes, Route, Navigate } from 'react-router-dom'
+import Layout from '../components/layout/Layout'
+import ProtectedRoute from './ProtectedRoute'
+import Loading from '../components/common/Loading'
+
+const Login = lazy(() => import('../pages/Login'))
+const Dashboard = lazy(() => import('../pages/Dashboard'))
+const Categories = lazy(() => import('../pages/Categories'))
+const Products = lazy(() => import('../pages/Products'))
+const Suppliers = lazy(() => import('../pages/Suppliers'))
+const Inventory = lazy(() => import('../pages/Inventory'))
+const Movements = lazy(() => import('../pages/Movements'))
+const Settings = lazy(() => import('../pages/Settings'))
+
+export default function AppRoutes() {
+  return (
+    <Suspense fallback={<Loading />}>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route element={<ProtectedRoute />}>
+          <Route element={<Layout />}>
+            <Route index element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/categories" element={<Categories />} />
+            <Route path="/products" element={<Products />} />
+            <Route path="/suppliers" element={<Suppliers />} />
+            <Route path="/inventory" element={<Inventory />} />
+            <Route path="/movements" element={<Movements />} />
+            <Route path="/settings" element={<Settings />} />
+          </Route>
+        </Route>
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      </Routes>
+    </Suspense>
+  )
+}

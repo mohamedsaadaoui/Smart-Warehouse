@@ -2,6 +2,7 @@ package com.saadaoui.smartwarehouse.auth.config;
 
 import com.saadaoui.smartwarehouse.auth.security.CustomUserDetailsService;
 import com.saadaoui.smartwarehouse.auth.security.JwtAuthenticationFilter;
+import com.saadaoui.smartwarehouse.auth.security.RestAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,6 +25,7 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomUserDetailsService customUserDetailsService;
+    private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
 
     @Bean
     public UserDetailsService userDetailsService() {
@@ -70,7 +72,11 @@ public class SecurityConfig {
                                 "/swagger-ui.html"
                         ).permitAll()
                         .anyRequest().authenticated()
-                ).authenticationProvider(authenticationProvider())
+                )
+                .exceptionHandling(ex ->
+                        ex.authenticationEntryPoint(restAuthenticationEntryPoint)
+                )
+                .authenticationProvider(authenticationProvider())
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
