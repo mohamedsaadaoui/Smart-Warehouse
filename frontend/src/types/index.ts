@@ -1,6 +1,7 @@
 export interface AuthResponse {
   accessToken: string
   tokenType: string
+  roles: string[]
 }
 
 export interface LoginRequest {
@@ -29,6 +30,38 @@ export interface CategoryRequest {
   name: string
   description?: string
   active?: boolean
+}
+
+export type UserRole = 'ADMIN' | 'MANAGER' | 'EMPLOYEE'
+
+export interface User {
+  id: string
+  firstName: string
+  lastName: string
+  email: string
+  phoneNumber: string | null
+  enabled: boolean
+  roles: UserRole[]
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateUserRequest {
+  firstName: string
+  lastName: string
+  email: string
+  password: string
+  phoneNumber?: string
+  role: UserRole
+}
+
+export interface UpdateUserRequest {
+  firstName: string
+  lastName: string
+  email: string
+  phoneNumber?: string
+  enabled: boolean
+  roles: UserRole[]
 }
 
 export interface Page<T> {

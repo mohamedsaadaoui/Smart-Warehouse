@@ -15,6 +15,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Set;
 
 @Service
@@ -53,6 +54,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         return AuthResponse.builder()
                 .accessToken(token)
                 .tokenType("Bearer")
+                .roles(roleNames(user))
                 .build();
     }
 
@@ -74,6 +76,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         return AuthResponse.builder()
                 .accessToken(token)
                 .tokenType("Bearer")
+                .roles(roleNames(user))
                 .build();
+    }
+
+    private List<String> roleNames(User user) {
+
+        return user.getRoles().stream().map(Role::getName).toList();
     }
 }

@@ -6,6 +6,8 @@ interface AuthContextValue {
   token: string | null
   isAuthenticated: boolean
   email: string
+  roles: string[]
+  isAdmin: boolean
   login: (data: LoginRequest) => Promise<void>
   register: (data: RegisterRequest) => Promise<void>
   logout: () => void
@@ -18,31 +20,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.getItem('token'),
   )
 
-  const storeToken = (accessToken: string) => {
+  const [roles, setRoles] = useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('roles') ?? '[]')
+    } catch {
+      return []
+    }
+  })
+
+  const storeSession = (accessToken: string, userRoles: string[]) => {
     localStorage.setItem('token', accessToken)
+    localStorage.setItem('roles', JSON.stringify(userRoles))
     setToken(accessToken)
+    setRoles(userRoles)
   }
 
   const login = async (data: LoginRequest) => {
     const res = await authApi.login(data)
-    storeToken(res.accessToken)
+    storeSession(res.accessToken, res.roles ?? [])
   }
 
   const register = async (data: RegisterRequest) => {
     const res = await authApi.register(data)
-    storeToken(res.accessToken)
+    storeSession(res.accessToken, res.roles ?? [])
   }
 
   const logout = () => {
     localStorage.removeItem('token')
+    localStorage.removeItem('roles')
     setToken(null)
+    setRoles([])
   }
 
   const email = token ? decodeEmail(token) : ''
+  const isAdmin = roles.includes('ADMIN')
 
   return (
     <AuthContext.Provider
-      value={{ token, isAuthenticated: !!token, email, login, register, logout }}
+      value={{ token, isAuthenticated: !!token, email, roles, isAdmin, login, register, logout }}
     >
       {children}
     </AuthContext.Provider>

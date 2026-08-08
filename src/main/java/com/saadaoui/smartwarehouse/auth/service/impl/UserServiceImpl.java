@@ -1,22 +1,38 @@
 package com.saadaoui.smartwarehouse.auth.service.impl;
 
-import com.saadaoui.smartwarehouse.auth.dto.RegisterRequest;
 import com.saadaoui.smartwarehouse.auth.entity.Role;
 import com.saadaoui.smartwarehouse.auth.entity.User;
 import com.saadaoui.smartwarehouse.auth.repository.RoleRepository;
 import com.saadaoui.smartwarehouse.auth.repository.UserRepository;
 import com.saadaoui.smartwarehouse.auth.service.UserService;
+import com.saadaoui.smartwarehouse.exception.DuplicateResourceException;
+import com.saadaoui.smartwarehouse.exception.ResourceNotFoundException;
+import com.saadaoui.smartwarehouse.user.dto.CreateUserRequest;
+import com.saadaoui.smartwarehouse.user.dto.UpdateUserRequest;
+import com.saadaoui.smartwarehouse.user.dto.UserResponse;
+import com.saadaoui.smartwarehouse.user.mapper.UserMapper;
+import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
+
+    private static final String ADMIN = "ADMIN";
 
     private final UserRepository userRepository;
 
@@ -24,15 +40,15 @@ public class UserServiceImpl implements UserService {
 
     private final PasswordEncoder passwordEncoder;
 
+    private final UserMapper userMapper;
+
     @Override
-    public User register(RegisterRequest request) {
+    @Transactional
+    public UserResponse createUser(CreateUserRequest request) {
 
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already exists");
+            throw new DuplicateResourceException("Email already exists");
         }
-
-        Role role = roleRepository.findByName("EMPLOYEE")
-                .orElseThrow(() -> new RuntimeException("Default role not found"));
 
         User user = User.builder()
                 .firstName(request.getFirstName())
@@ -40,31 +56,124 @@ public class UserServiceImpl implements UserService {
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .phoneNumber(request.getPhoneNumber())
-                .roles(Set.of(role))
+                .roles(Set.of(resolveRole(request.getRole())))
                 .build();
 
-        return userRepository.save(user);
+        User saved = userRepository.save(user);
+
+        log.info("User created: {} <{}> (id={})", saved.getEmail(), saved.getEmail(), saved.getId());
+
+        return userMapper.toResponse(saved);
     }
 
     @Override
-    public User getById(UUID id) {
+    @Transactional
+    public UserResponse updateUser(UUID id, UpdateUserRequest request) {
+
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (userRepository.existsByEmailAndIdNot(request.getEmail(), id)) {
+            throw new DuplicateResourceException("Email already exists");
+        }
+
+        Set<Role> roles = request.getRoles().stream()
+                .map(this::resolveRole)
+                .collect(Collectors.toSet());
+
+        ensureLastAdminSafety(user, request.getEnabled(), roles);
+
+        user.setFirstName(request.getFirstName());
+        user.setLastName(request.getLastName());
+        user.setEmail(request.getEmail());
+        user.setPhoneNumber(request.getPhoneNumber());
+        user.setEnabled(request.getEnabled());
+        user.setRoles(roles);
+
+        User saved = userRepository.save(user);
+
+        log.info("User updated: {} (id={})", saved.getEmail(), saved.getId());
+
+        return userMapper.toResponse(saved);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UserResponse getUserById(UUID id) {
+
         return userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .map(userMapper::toResponse)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
 
     @Override
-    public User getByEmail(String email) {
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+    @Transactional(readOnly = true)
+    public Page<UserResponse> getAllUsers(String search, Boolean enabled, Pageable pageable) {
+
+        return userRepository
+                .findAll(buildSpecification(search, enabled), pageable)
+                .map(userMapper::toResponse);
     }
 
     @Override
-    public List<User> getAll() {
-        return userRepository.findAll();
-    }
+    @Transactional
+    public void deleteUser(UUID id, String currentUserEmail) {
 
-    @Override
-    public void delete(UUID id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (user.getEmail().equals(currentUserEmail)) {
+            throw new IllegalArgumentException("You cannot delete your own account");
+        }
+
+        ensureLastAdminSafety(user, false, user.getRoles());
+
         userRepository.deleteById(id);
+
+        log.info("User deleted: {} (id={})", user.getEmail(), id);
     }
+
+    private Role resolveRole(String name) {
+
+        return roleRepository.findByName(name)
+                .orElseThrow(() -> new IllegalArgumentException("Role not found: " + name));
+    }
+
+    private void ensureLastAdminSafety(User target, Boolean newEnabled, Set<Role> newRoles) {
+
+        boolean targetIsAdmin = target.getRoles().stream().anyMatch(role -> role.getName().equals(ADMIN));
+        boolean keepsAdmin = newRoles.stream().anyMatch(role -> role.getName().equals(ADMIN));
+
+        if (targetIsAdmin && (newEnabled == null || !newEnabled || !keepsAdmin)) {
+            long admins = userRepository.countByEnabledTrueAndRolesName(ADMIN);
+            if (admins <= 1) {
+                throw new IllegalArgumentException(
+                        "Cannot disable, delete or demote the last active ADMIN account");
+            }
+        }
+    }
+
+    private Specification<User> buildSpecification(String search, Boolean enabled) {
+
+        return (root, query, cb) -> {
+
+            List<Predicate> predicates = new ArrayList<>();
+
+            if (search != null && !search.isBlank()) {
+                String pattern = "%" + search.trim().toLowerCase() + "%";
+                predicates.add(cb.or(
+                        cb.like(cb.lower(root.get("firstName")), pattern),
+                        cb.like(cb.lower(root.get("lastName")), pattern),
+                        cb.like(cb.lower(root.get("email")), pattern)
+                ));
+            }
+
+            if (enabled != null) {
+                predicates.add(cb.equal(root.get("enabled"), enabled));
+            }
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+    }
+
 }

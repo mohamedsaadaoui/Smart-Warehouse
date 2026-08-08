@@ -16,22 +16,35 @@ import CategoryOutlinedIcon from '@mui/icons-material/CategoryOutlined'
 import LocalShippingOutlinedIcon from '@mui/icons-material/LocalShippingOutlined'
 import WarehouseOutlinedIcon from '@mui/icons-material/WarehouseOutlined'
 import SwapHorizOutlinedIcon from '@mui/icons-material/SwapHorizOutlined'
+import GroupOutlinedIcon from '@mui/icons-material/GroupOutlined'
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined'
+import { useAuth } from '../../context/AuthContext'
 
 const DRAWER_WIDTH = 240
 
-const NAV_ITEMS = [
+interface NavItem {
+  label: string
+  path: string
+  icon: React.ReactNode
+  adminOnly?: boolean
+}
+
+const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', path: '/dashboard', icon: <DashboardOutlinedIcon /> },
   { label: 'Products', path: '/products', icon: <Inventory2OutlinedIcon /> },
   { label: 'Categories', path: '/categories', icon: <CategoryOutlinedIcon /> },
   { label: 'Suppliers', path: '/suppliers', icon: <LocalShippingOutlinedIcon /> },
   { label: 'Inventory', path: '/inventory', icon: <WarehouseOutlinedIcon /> },
   { label: 'Movements', path: '/movements', icon: <SwapHorizOutlinedIcon /> },
+  { label: 'Users', path: '/users', icon: <GroupOutlinedIcon />, adminOnly: true },
   { label: 'Settings', path: '/settings', icon: <SettingsOutlinedIcon /> },
 ]
 
 export default function Sidebar() {
   const theme = useTheme()
+  const { isAdmin } = useAuth()
+
+  const items = NAV_ITEMS.filter((item) => !item.adminOnly || isAdmin)
 
   return (
     <Drawer
@@ -53,7 +66,7 @@ export default function Sidebar() {
         </Typography>
       </Toolbar>
       <List sx={{ px: 1 }}>
-        {NAV_ITEMS.map((item) => (
+        {items.map((item) => (
           <ListItemButton
             key={item.path}
             component={NavLink}

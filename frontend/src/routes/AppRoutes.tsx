@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import Layout from '../components/layout/Layout'
 import ProtectedRoute from './ProtectedRoute'
+import AdminRoute from './AdminRoute'
 import Loading from '../components/common/Loading'
 
 const Login = lazy(() => import('../pages/Login'))
@@ -11,6 +12,7 @@ const Products = lazy(() => import('../pages/Products'))
 const Suppliers = lazy(() => import('../pages/Suppliers'))
 const Inventory = lazy(() => import('../pages/Inventory'))
 const Movements = lazy(() => import('../pages/Movements'))
+const Users = lazy(() => import('../pages/Users'))
 const Settings = lazy(() => import('../pages/Settings'))
 
 export default function AppRoutes() {
@@ -27,6 +29,9 @@ export default function AppRoutes() {
             <Route path="/suppliers" element={<Suppliers />} />
             <Route path="/inventory" element={<Inventory />} />
             <Route path="/movements" element={<Movements />} />
+            <Route element={<AdminRoute />}>
+              <Route path="/users" element={<Users />} />
+            </Route>
             <Route path="/settings" element={<Settings />} />
           </Route>
         </Route>

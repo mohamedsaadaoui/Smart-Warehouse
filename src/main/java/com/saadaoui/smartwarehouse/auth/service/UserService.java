@@ -1,21 +1,23 @@
 package com.saadaoui.smartwarehouse.auth.service;
 
-import com.saadaoui.smartwarehouse.auth.dto.RegisterRequest;
-import com.saadaoui.smartwarehouse.auth.entity.User;
+import com.saadaoui.smartwarehouse.user.dto.CreateUserRequest;
+import com.saadaoui.smartwarehouse.user.dto.UpdateUserRequest;
+import com.saadaoui.smartwarehouse.user.dto.UserResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
-import java.util.List;
 import java.util.UUID;
 
 public interface UserService {
 
-    User register(RegisterRequest request);
+    UserResponse createUser(CreateUserRequest request);
 
-    User getById(UUID id);
+    UserResponse updateUser(UUID id, UpdateUserRequest request);
 
-    User getByEmail(String email);
+    UserResponse getUserById(UUID id);
 
-    List<User> getAll();
+    Page<UserResponse> getAllUsers(String search, Boolean enabled, Pageable pageable);
 
-    void delete(UUID id);
+    void deleteUser(UUID id, String currentUserEmail);
 
 }
