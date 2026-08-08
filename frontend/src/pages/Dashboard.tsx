@@ -1,31 +1,39 @@
-import { useEffect, useState } from 'react'
-import { Grid, Card, CardContent, CardHeader, Typography, Box } from '@mui/material'
+import { useCallback, useEffect, useState } from 'react'
+import {
+  Grid,
+  Card,
+  CardContent,
+  CardHeader,
+  Typography,
+  Box,
+  Chip,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Link,
+} from '@mui/material'
 import {
   ResponsiveContainer,
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
+  PieChart,
+  Pie,
+  Cell,
   Tooltip,
+  Legend,
 } from 'recharts'
 import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined'
 import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined'
-import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined'
+import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined'
 import CategoryOutlinedIcon from '@mui/icons-material/CategoryOutlined'
+import { Link as RouterLink } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { categoryApi } from '../api/categoryApi'
+import { dashboardApi } from '../api/dashboardApi'
+import type { DashboardSummary } from '../types'
 import Loading from '../components/common/Loading'
 
-const INVENTORY_DATA = [
-  { month: 'Jan', inbound: 420, outbound: 380 },
-  { month: 'Feb', inbound: 510, outbound: 430 },
-  { month: 'Mar', inbound: 470, outbound: 520 },
-  { month: 'Apr', inbound: 590, outbound: 480 },
-  { month: 'May', inbound: 640, outbound: 560 },
-  { month: 'Jun', inbound: 610, outbound: 620 },
-  { month: 'Jul', inbound: 720, outbound: 590 },
-]
+const PIE_COLORS = ['#4f46e5', '#059669', '#d97706', '#e11d48', '#0284c7', '#7c3aed']
 
 interface StatCardProps {
   label: string
@@ -69,22 +77,31 @@ function StatCard({ label, value, icon, color }: StatCardProps) {
 
 export default function Dashboard() {
   const { email } = useAuth()
-  const [categories, setCategories] = useState(0)
+  const [summary, setSummary] = useState<DashboardSummary | null>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    categoryApi
-      .getAll({ page: 0, size: 1 })
-      .then((page) => setCategories(page.totalElements))
-      .catch(() => setCategories(0))
-      .finally(() => setLoading(false))
+  const fetchSummary = useCallback(async () => {
+    setLoading(true)
+    try {
+      const data = await dashboardApi.getSummary()
+      setSummary(data)
+    } catch {
+      setSummary(null)
+    } finally {
+      setLoading(false)
+    }
   }, [])
+
+  useEffect(() => {
+    fetchSummary()
+  }, [fetchSummary])
 
   if (loading) {
     return <Loading />
   }
 
   const firstName = email.split('@')[0].replace(/[._-]/g, ' ')
+  const hasLowStock = (summary?.lowStockProducts.length ?? 0) > 0
 
   return (
     <Box>
@@ -99,7 +116,7 @@ export default function Dashboard() {
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             label="Products"
-            value={1248}
+            value={summary?.totalProducts ?? 0}
             icon={<Inventory2OutlinedIcon />}
             color="#4f46e5"
           />
@@ -107,71 +124,138 @@ export default function Dashboard() {
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             label="Low Stock"
-            value={24}
+            value={summary?.lowStockCount ?? 0}
             icon={<WarningAmberOutlinedIcon />}
             color="#e11d48"
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
-            label="Orders"
-            value={87}
-            icon={<ReceiptLongOutlinedIcon />}
-            color="#059669"
+            label="Out of Stock"
+            value={summary?.outOfStockCount ?? 0}
+            icon={<BlockOutlinedIcon />}
+            color="#d97706"
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             label="Categories"
-            value={categories}
+            value={summary?.totalCategories ?? 0}
             icon={<CategoryOutlinedIcon />}
-            color="#d97706"
+            color="#059669"
           />
         </Grid>
       </Grid>
 
-      <Card sx={{ mt: 3 }}>
-        <CardHeader
-          title="Inventory Overview"
-          subheader="Inbound vs outbound movements"
-        />
-        <CardContent>
-          <ResponsiveContainer width="100%" height={320}>
-            <AreaChart data={INVENTORY_DATA} margin={{ top: 8, right: 24, left: 0, bottom: 0 }}>
-              <defs>
-                <linearGradient id="colorInbound" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.35} />
-                  <stop offset="95%" stopColor="#4f46e5" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="colorOutbound" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#059669" stopOpacity={0.35} />
-                  <stop offset="95%" stopColor="#059669" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="month" tickLine={false} axisLine={false} />
-              <YAxis tickLine={false} axisLine={false} width={40} />
-              <Tooltip />
-              <Area
-                type="monotone"
-                dataKey="inbound"
-                name="Inbound"
-                stroke="#4f46e5"
-                fill="url(#colorInbound)"
-                strokeWidth={2}
-              />
-              <Area
-                type="monotone"
-                dataKey="outbound"
-                name="Outbound"
-                stroke="#059669"
-                fill="url(#colorOutbound)"
-                strokeWidth={2}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+      <Grid container spacing={3} sx={{ mt: 0 }}>
+        <Grid item xs={12} lg={8}>
+          <Card>
+            <CardHeader
+              title="Low stock alerts"
+              subheader="Products below their minimum stock level"
+            />
+            <CardContent sx={{ p: 0 }}>
+              {hasLowStock ? (
+                <TableContainer>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>
+                          <b>Product</b>
+                        </TableCell>
+                        <TableCell>
+                          <b>SKU</b>
+                        </TableCell>
+                        <TableCell align="right">
+                          <b>Qty</b>
+                        </TableCell>
+                        <TableCell align="right">
+                          <b>Min stock</b>
+                        </TableCell>
+                        <TableCell align="right">
+                          <b>Status</b>
+                        </TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {summary?.lowStockProducts.map((product) => (
+                        <TableRow key={product.id} hover>
+                          <TableCell>{product.name}</TableCell>
+                          <TableCell>
+                            <span style={{ fontFamily: 'monospace' }}>{product.sku}</span>
+                          </TableCell>
+                          <TableCell align="right">{product.quantity}</TableCell>
+                          <TableCell align="right">{product.minStock}</TableCell>
+                          <TableCell align="right">
+                            <Chip
+                              label={product.quantity === 0 ? 'Out of stock' : 'Low stock'}
+                              color={product.quantity === 0 ? 'error' : 'warning'}
+                              size="small"
+                            />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              ) : (
+                <Box sx={{ p: 3 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    All products are above their minimum stock level.
+                  </Typography>
+                </Box>
+              )}
+              <Box sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+                <Link component={RouterLink} to="/products" underline="hover">
+                  View all products
+                </Link>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} lg={4}>
+          <Card>
+            <CardHeader
+              title="Products by category"
+              subheader="Distribution across categories"
+            />
+            <CardContent>
+              {summary && summary.productsPerCategory.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={summary.productsPerCategory}
+                      dataKey="productCount"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={55}
+                      outerRadius={95}
+                      paddingAngle={2}
+                    >
+                      {summary.productsPerCategory.map((_, index) => (
+                        <Cell
+                          key={index}
+                          fill={PIE_COLORS[index % PIE_COLORS.length]}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <Box sx={{ py: 6, textAlign: 'center' }}>
+                  <Typography variant="body2" color="text.secondary">
+                    No products yet
+                  </Typography>
+                </Box>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
     </Box>
   )
 }

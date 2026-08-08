@@ -1,0 +1,149 @@
+package com.saadaoui.smartwarehouse.product.service.impl;
+
+import com.saadaoui.smartwarehouse.category.repository.CategoryRepository;
+import com.saadaoui.smartwarehouse.entity.Category;
+import com.saadaoui.smartwarehouse.entity.Product;
+import com.saadaoui.smartwarehouse.exception.DuplicateResourceException;
+import com.saadaoui.smartwarehouse.exception.ResourceNotFoundException;
+import com.saadaoui.smartwarehouse.product.dto.ProductRequest;
+import com.saadaoui.smartwarehouse.product.dto.ProductResponse;
+import com.saadaoui.smartwarehouse.product.dto.ProductStatus;
+import com.saadaoui.smartwarehouse.product.mapper.ProductMapper;
+import com.saadaoui.smartwarehouse.product.repository.ProductRepository;
+import com.saadaoui.smartwarehouse.product.service.ProductService;
+import jakarta.persistence.criteria.Predicate;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+@Service
+@RequiredArgsConstructor
+public class ProductServiceImpl implements ProductService {
+
+    private final ProductRepository productRepository;
+
+    private final CategoryRepository categoryRepository;
+
+    private final ProductMapper productMapper;
+
+    @Override
+    @Transactional
+    public ProductResponse create(ProductRequest request) {
+
+        if (productRepository.existsBySku(request.getSku())) {
+            throw new DuplicateResourceException("SKU already exists");
+        }
+
+        Product product = productMapper.toEntity(request);
+        product.setCategory(findCategory(request.getCategoryId()));
+
+        return productMapper.toResponse(productRepository.save(product));
+    }
+
+    @Override
+    @Transactional
+    public ProductResponse update(UUID id, ProductRequest request) {
+
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+
+        if (productRepository.existsBySkuAndIdNot(request.getSku(), id)) {
+            throw new DuplicateResourceException("SKU already exists");
+        }
+
+        product.setName(request.getName());
+        product.setSku(request.getSku());
+        product.setDescription(request.getDescription());
+        product.setPrice(request.getPrice());
+        product.setQuantity(request.getQuantity());
+        product.setMinStock(request.getMinStock());
+        product.setActive(request.getActive());
+        product.setCategory(findCategory(request.getCategoryId()));
+
+        return productMapper.toResponse(productRepository.save(product));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ProductResponse getById(UUID id) {
+
+        return productRepository.findById(id)
+                .map(productMapper::toResponse)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ProductResponse> getAll(String search, UUID categoryId, ProductStatus status,
+                                        Boolean active, Pageable pageable) {
+
+        return productRepository
+                .findAll(buildSpecification(search, categoryId, status, active), pageable)
+                .map(productMapper::toResponse);
+    }
+
+    @Override
+    @Transactional
+    public void delete(UUID id) {
+
+        if (!productRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Product not found");
+        }
+
+        productRepository.deleteById(id);
+    }
+
+    private Category findCategory(UUID categoryId) {
+
+        return categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
+    }
+
+    private Specification<Product> buildSpecification(
+            String search, UUID categoryId, ProductStatus status, Boolean active) {
+
+        return (root, query, cb) -> {
+
+            List<Predicate> predicates = new ArrayList<>();
+
+            if (search != null && !search.isBlank()) {
+                String pattern = "%" + search.trim().toLowerCase() + "%";
+                predicates.add(cb.or(
+                        cb.like(cb.lower(root.get("name")), pattern),
+                        cb.like(cb.lower(root.get("sku")), pattern)
+                ));
+            }
+
+            if (categoryId != null) {
+                predicates.add(cb.equal(root.get("category").get("id"), categoryId));
+            }
+
+            if (status != null) {
+                switch (status) {
+                    case LOW_STOCK -> predicates.add(cb.and(
+                            cb.greaterThan(root.get("quantity"), 0),
+                            cb.lessThanOrEqualTo(root.get("quantity"), root.get("minStock"))
+                    ));
+                    case OUT_OF_STOCK -> predicates.add(cb.equal(root.get("quantity"), 0));
+                    case IN_STOCK -> predicates.add(
+                            cb.greaterThan(root.get("quantity"), root.get("minStock"))
+                    );
+                }
+            }
+
+            if (active != null) {
+                predicates.add(cb.equal(root.get("active"), active));
+            }
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+    }
+
+}
