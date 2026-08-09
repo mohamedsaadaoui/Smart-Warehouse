@@ -72,7 +72,8 @@ public class SecurityConfig {
                                 "/swagger-ui.html",
                                 "/error"
                         ).permitAll()
-                        .requestMatchers("/api/users/**").hasAuthority("ADMIN")
+                        .requestMatchers("/api/users/**", "/api/audit-logs/**")
+                                .hasAuthority("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex ->

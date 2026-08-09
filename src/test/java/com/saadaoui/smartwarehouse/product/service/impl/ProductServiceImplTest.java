@@ -1,5 +1,6 @@
 package com.saadaoui.smartwarehouse.product.service.impl;
 
+import com.saadaoui.smartwarehouse.audit.service.AuditLogService;
 import com.saadaoui.smartwarehouse.category.repository.CategoryRepository;
 import com.saadaoui.smartwarehouse.entity.Category;
 import com.saadaoui.smartwarehouse.entity.Product;
@@ -43,6 +44,9 @@ class ProductServiceImplTest {
 
     @Mock
     private ProductMapper productMapper;
+
+    @Mock
+    private AuditLogService auditLogService;
 
     @InjectMocks
     private ProductServiceImpl productService;

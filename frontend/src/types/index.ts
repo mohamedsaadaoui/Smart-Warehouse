@@ -191,3 +191,40 @@ export interface DashboardSummary {
   recentMovements: RecentMovement[]
   monthlyMovements: MonthlyMovementStats[]
 }
+
+export interface AppSettings {
+  warehouseName: string
+  currency: string
+  lowStockThreshold: number
+  notificationsEnabled: boolean
+  updatedAt: string
+}
+
+export interface SettingsRequest {
+  warehouseName: string
+  currency: string
+  lowStockThreshold: number
+  notificationsEnabled: boolean
+}
+
+export type StockAlertType = 'LOW_STOCK' | 'OUT_OF_STOCK'
+
+export interface StockAlert {
+  productId: string
+  productName: string
+  sku: string
+  quantity: number
+  minStock: number
+  type: StockAlertType
+  createdAt: string
+}
+
+export interface AuditLogEntry {
+  id: string
+  action: string
+  entityType: string
+  entityId: string | null
+  details: string | null
+  performedBy: string
+  createdAt: string
+}

@@ -1,5 +1,7 @@
 package com.saadaoui.smartwarehouse.movement.service.impl;
 
+import com.saadaoui.smartwarehouse.audit.AuditConstants;
+import com.saadaoui.smartwarehouse.audit.service.AuditLogService;
 import com.saadaoui.smartwarehouse.entity.MovementType;
 import com.saadaoui.smartwarehouse.entity.Product;
 import com.saadaoui.smartwarehouse.entity.StockMovement;
@@ -35,6 +37,8 @@ public class MovementServiceImpl implements MovementService {
     private final StockMovementRepository movementRepository;
 
     private final MovementMapper movementMapper;
+
+    private final AuditLogService auditLogService;
 
     @Override
     @Transactional
@@ -114,6 +118,11 @@ public class MovementServiceImpl implements MovementService {
 
         log.info("Stock {} for {} ({}): {} -> {} by {}", type, product.getSku(),
                 saved.getId(), before, after, username);
+
+        auditLogService.record(type.name(), AuditConstants.ENTITY_STOCK_MOVEMENT,
+                saved.getId(), String.format(
+                        "%s %d units of \"%s\" (%s): %d -> %d",
+                        type, quantity, product.getName(), product.getSku(), before, after));
 
         return movementMapper.toResponse(saved);
     }

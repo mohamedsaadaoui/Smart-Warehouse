@@ -9,9 +9,9 @@ import {
   Avatar,
 } from '@mui/material'
 import { useState } from 'react'
-import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNoneOutlined'
 import LightModeOutlinedIcon from '@mui/icons-material/LightModeOutlined'
 import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined'
+import NotificationBell from '../notifications/NotificationBell'
 import { useAuth } from '../../context/AuthContext'
 import { useColorMode } from '../../context/ColorModeContext'
 import { useNavigate } from 'react-router-dom'
@@ -39,9 +39,7 @@ export default function Navbar() {
         <IconButton onClick={toggleColorMode} color="default">
           {mode === 'light' ? <DarkModeOutlinedIcon /> : <LightModeOutlinedIcon />}
         </IconButton>
-        <IconButton color="default">
-          <NotificationsNoneOutlinedIcon />
-        </IconButton>
+        <NotificationBell />
         <IconButton
           onClick={(e) => setAnchorEl(e.currentTarget)}
           sx={{ ml: 1 }}

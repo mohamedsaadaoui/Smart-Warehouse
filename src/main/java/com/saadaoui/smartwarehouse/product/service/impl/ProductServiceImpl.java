@@ -1,5 +1,7 @@
 package com.saadaoui.smartwarehouse.product.service.impl;
 
+import com.saadaoui.smartwarehouse.audit.AuditConstants;
+import com.saadaoui.smartwarehouse.audit.service.AuditLogService;
 import com.saadaoui.smartwarehouse.category.repository.CategoryRepository;
 import com.saadaoui.smartwarehouse.entity.Category;
 import com.saadaoui.smartwarehouse.entity.Product;
@@ -39,6 +41,8 @@ public class ProductServiceImpl implements ProductService {
 
     private final ProductMapper productMapper;
 
+    private final AuditLogService auditLogService;
+
     @Override
     @Transactional
     public ProductResponse create(ProductRequest request) {
@@ -54,6 +58,9 @@ public class ProductServiceImpl implements ProductService {
         Product saved = productRepository.save(product);
 
         log.info("Product created: {} (sku={}, id={})", saved.getName(), saved.getSku(), saved.getId());
+
+        auditLogService.record(AuditConstants.ACTION_CREATE, AuditConstants.ENTITY_PRODUCT,
+                saved.getId(), "Created product \"" + saved.getName() + "\" (SKU: " + saved.getSku() + ")");
 
         return productMapper.toResponse(saved);
     }
@@ -82,6 +89,9 @@ public class ProductServiceImpl implements ProductService {
         Product saved = productRepository.save(product);
 
         log.info("Product updated: {} (id={})", saved.getName(), saved.getId());
+
+        auditLogService.record(AuditConstants.ACTION_UPDATE, AuditConstants.ENTITY_PRODUCT,
+                saved.getId(), "Updated product \"" + saved.getName() + "\" (SKU: " + saved.getSku() + ")");
 
         return productMapper.toResponse(saved);
     }
@@ -116,6 +126,9 @@ public class ProductServiceImpl implements ProductService {
         productRepository.deleteById(id);
 
         log.info("Product deleted: {}", id);
+
+        auditLogService.record(AuditConstants.ACTION_DELETE, AuditConstants.ENTITY_PRODUCT,
+                id, "Deleted product " + id);
     }
 
     private Category findCategory(UUID categoryId) {

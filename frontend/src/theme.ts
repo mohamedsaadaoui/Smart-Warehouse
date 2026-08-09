@@ -6,6 +6,13 @@ export default function createAppTheme(mode: 'light' | 'dark') {
       mode,
       primary: {
         main: '#4f46e5',
+        light: '#818cf8',
+        dark: '#4338ca',
+      },
+      warning: {
+        main: '#ed6c02',
+        light: '#ffb74d',
+        dark: '#9a3412',
       },
       background: {
         default: mode === 'light' ? '#f5f6fa' : '#121212',

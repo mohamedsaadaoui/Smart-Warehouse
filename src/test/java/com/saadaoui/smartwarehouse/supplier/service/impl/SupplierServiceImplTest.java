@@ -1,5 +1,6 @@
 package com.saadaoui.smartwarehouse.supplier.service.impl;
 
+import com.saadaoui.smartwarehouse.audit.service.AuditLogService;
 import com.saadaoui.smartwarehouse.entity.Supplier;
 import com.saadaoui.smartwarehouse.exception.DuplicateResourceException;
 import com.saadaoui.smartwarehouse.exception.ResourceNotFoundException;
@@ -33,6 +34,9 @@ class SupplierServiceImplTest {
 
     @Mock
     private SupplierMapper supplierMapper;
+
+    @Mock
+    private AuditLogService auditLogService;
 
     @InjectMocks
     private SupplierServiceImpl supplierService;

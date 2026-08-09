@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import {
   Alert,
   Box,
+  Button,
   Chip,
   FormControl,
   InputLabel,
@@ -12,7 +13,10 @@ import {
   Toolbar,
   Typography,
 } from '@mui/material'
+import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined'
 import { movementApi } from '../api/movementApi'
+import { reportApi } from '../api/reportApi'
+import { downloadBlob } from '../utils/download'
 import type { MovementType, StockMovement } from '../types'
 import DataTable, { type Column } from '../components/common/DataTable'
 import { useDebounce } from '../hooks/useDebounce'
@@ -60,6 +64,18 @@ export default function Movements() {
     fetchMovements()
   }, [fetchMovements])
 
+  const handleExport = async () => {
+    try {
+      const blob = await reportApi.exportMovements({
+        search: debouncedSearch || undefined,
+        type: (typeFilter as MovementType) || undefined,
+      })
+      downloadBlob(blob, 'movements.csv')
+    } catch {
+      setError('Failed to export movements')
+    }
+  }
+
   const columns: Column<StockMovement>[] = [
     {
       id: 'createdAt',
@@ -93,6 +109,13 @@ export default function Movements() {
         <Typography variant="h5" fontWeight={600}>
           Movements
         </Typography>
+        <Button
+          variant="outlined"
+          startIcon={<FileDownloadOutlinedIcon />}
+          onClick={handleExport}
+        >
+          Export
+        </Button>
       </Toolbar>
 
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ my: 2 }} alignItems="center">

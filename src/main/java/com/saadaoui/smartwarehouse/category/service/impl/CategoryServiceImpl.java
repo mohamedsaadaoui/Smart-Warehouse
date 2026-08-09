@@ -1,5 +1,7 @@
 package com.saadaoui.smartwarehouse.category.service.impl;
 
+import com.saadaoui.smartwarehouse.audit.AuditConstants;
+import com.saadaoui.smartwarehouse.audit.service.AuditLogService;
 import com.saadaoui.smartwarehouse.category.dto.CategoryRequest;
 import com.saadaoui.smartwarehouse.category.dto.CategoryResponse;
 import com.saadaoui.smartwarehouse.category.mapper.CategoryMapper;
@@ -24,6 +26,8 @@ public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryMapper categoryMapper;
 
+    private final AuditLogService auditLogService;
+
     @Override
     @Transactional
     public CategoryResponse create(CategoryRequest request) {
@@ -34,7 +38,12 @@ public class CategoryServiceImpl implements CategoryService {
 
         Category category = categoryMapper.toEntity(request);
 
-        return categoryMapper.toResponse(categoryRepository.save(category));
+        Category saved = categoryRepository.save(category);
+
+        auditLogService.record(AuditConstants.ACTION_CREATE, AuditConstants.ENTITY_CATEGORY,
+                saved.getId(), "Created category \"" + saved.getName() + "\"");
+
+        return categoryMapper.toResponse(saved);
     }
 
     @Override
@@ -54,7 +63,12 @@ public class CategoryServiceImpl implements CategoryService {
         category.setDescription(request.getDescription());
         category.setActive(request.getActive());
 
-        return categoryMapper.toResponse(categoryRepository.save(category));
+        Category saved = categoryRepository.save(category);
+
+        auditLogService.record(AuditConstants.ACTION_UPDATE, AuditConstants.ENTITY_CATEGORY,
+                saved.getId(), "Updated category \"" + saved.getName() + "\"");
+
+        return categoryMapper.toResponse(saved);
     }
 
     @Override
@@ -92,6 +106,9 @@ public class CategoryServiceImpl implements CategoryService {
         }
 
         categoryRepository.deleteById(id);
+
+        auditLogService.record(AuditConstants.ACTION_DELETE, AuditConstants.ENTITY_CATEGORY,
+                id, "Deleted category " + id);
     }
 
 }

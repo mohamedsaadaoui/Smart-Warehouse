@@ -1,5 +1,6 @@
 package com.saadaoui.smartwarehouse.auth.service.impl;
 
+import com.saadaoui.smartwarehouse.audit.service.AuditLogService;
 import com.saadaoui.smartwarehouse.auth.entity.Role;
 import com.saadaoui.smartwarehouse.auth.entity.User;
 import com.saadaoui.smartwarehouse.auth.repository.RoleRepository;
@@ -46,6 +47,9 @@ class UserServiceImplTest {
 
     @Mock
     private UserMapper userMapper;
+
+    @Mock
+    private AuditLogService auditLogService;
 
     @InjectMocks
     private UserServiceImpl userService;

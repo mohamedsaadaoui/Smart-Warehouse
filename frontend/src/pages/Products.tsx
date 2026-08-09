@@ -15,10 +15,13 @@ import {
   Typography,
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
+import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined'
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import { productApi } from '../api/productApi'
 import { categoryApi } from '../api/categoryApi'
+import { reportApi } from '../api/reportApi'
+import { downloadBlob } from '../utils/download'
 import type { Category, Product, ProductRequest, ProductStatus } from '../types'
 import DataTable, { type Column } from '../components/common/DataTable'
 import ConfirmDialog from '../components/common/ConfirmDialog'
@@ -129,6 +132,19 @@ export default function Products() {
     }
   }
 
+  const handleExport = async () => {
+    try {
+      const blob = await reportApi.exportProducts({
+        search: debouncedSearch || undefined,
+        categoryId: categoryFilter || undefined,
+        status: (statusFilter as ProductStatus) || undefined,
+      })
+      downloadBlob(blob, 'products.csv')
+    } catch {
+      setError('Failed to export products')
+    }
+  }
+
   const columns: Column<Product>[] = [
     { id: 'name', label: 'Name', render: (row) => <b>{row.name}</b> },
     { id: 'sku', label: 'SKU', render: (row) => <span style={{ fontFamily: 'monospace' }}>{row.sku}</span> },
@@ -172,9 +188,18 @@ export default function Products() {
         <Typography variant="h5" fontWeight={600}>
           Products
         </Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={openCreate}>
-          New product
-        </Button>
+        <Stack direction="row" spacing={1}>
+          <Button
+            variant="outlined"
+            startIcon={<FileDownloadOutlinedIcon />}
+            onClick={handleExport}
+          >
+            Export
+          </Button>
+          <Button variant="contained" startIcon={<AddIcon />} onClick={openCreate}>
+            New product
+          </Button>
+        </Stack>
       </Toolbar>
 
       <Stack

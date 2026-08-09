@@ -1,5 +1,7 @@
 package com.saadaoui.smartwarehouse.auth.service.impl;
 
+import com.saadaoui.smartwarehouse.audit.AuditConstants;
+import com.saadaoui.smartwarehouse.audit.service.AuditLogService;
 import com.saadaoui.smartwarehouse.auth.entity.Role;
 import com.saadaoui.smartwarehouse.auth.entity.User;
 import com.saadaoui.smartwarehouse.auth.repository.RoleRepository;
@@ -42,6 +44,8 @@ public class UserServiceImpl implements UserService {
 
     private final UserMapper userMapper;
 
+    private final AuditLogService auditLogService;
+
     @Override
     @Transactional
     public UserResponse createUser(CreateUserRequest request) {
@@ -62,6 +66,9 @@ public class UserServiceImpl implements UserService {
         User saved = userRepository.save(user);
 
         log.info("User created: {} <{}> (id={})", saved.getEmail(), saved.getEmail(), saved.getId());
+
+        auditLogService.record(AuditConstants.ACTION_CREATE, AuditConstants.ENTITY_USER,
+                saved.getId(), "Created user \"" + saved.getEmail() + "\"");
 
         return userMapper.toResponse(saved);
     }
@@ -93,6 +100,9 @@ public class UserServiceImpl implements UserService {
         User saved = userRepository.save(user);
 
         log.info("User updated: {} (id={})", saved.getEmail(), saved.getId());
+
+        auditLogService.record(AuditConstants.ACTION_UPDATE, AuditConstants.ENTITY_USER,
+                saved.getId(), "Updated user \"" + saved.getEmail() + "\"");
 
         return userMapper.toResponse(saved);
     }
@@ -131,6 +141,9 @@ public class UserServiceImpl implements UserService {
         userRepository.deleteById(id);
 
         log.info("User deleted: {} (id={})", user.getEmail(), id);
+
+        auditLogService.record(AuditConstants.ACTION_DELETE, AuditConstants.ENTITY_USER,
+                id, "Deleted user \"" + user.getEmail() + "\"");
     }
 
     private Role resolveRole(String name) {

@@ -28,6 +28,12 @@ public interface ProductRepository
     @Query("SELECT p FROM Product p WHERE p.quantity <= p.minStock ORDER BY p.quantity ASC")
     List<Product> findLowStockProducts(Pageable pageable);
 
+    @Query("SELECT p FROM Product p WHERE p.quantity <= :threshold ORDER BY p.quantity ASC")
+    List<Product> findProductsAtOrBelowThreshold(int threshold, Pageable pageable);
+
+    @Query("SELECT COUNT(p) FROM Product p WHERE p.quantity <= :threshold")
+    long countProductsAtOrBelowThreshold(int threshold);
+
     @Query("""
             SELECT c.name AS name, COUNT(p.id) AS productCount
             FROM Product p JOIN p.category c

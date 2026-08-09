@@ -1,5 +1,6 @@
 package com.saadaoui.smartwarehouse.movement.service.impl;
 
+import com.saadaoui.smartwarehouse.audit.service.AuditLogService;
 import com.saadaoui.smartwarehouse.entity.MovementType;
 import com.saadaoui.smartwarehouse.entity.Product;
 import com.saadaoui.smartwarehouse.entity.StockMovement;
@@ -39,6 +40,9 @@ class MovementServiceImplTest {
 
     @Mock
     private MovementMapper movementMapper;
+
+    @Mock
+    private AuditLogService auditLogService;
 
     @InjectMocks
     private MovementServiceImpl movementService;

@@ -14,7 +14,10 @@ import {
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline'
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline'
 import TuneIcon from '@mui/icons-material/Tune'
+import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined'
 import { productApi } from '../api/productApi'
+import { reportApi } from '../api/reportApi'
+import { downloadBlob } from '../utils/download'
 import type { MovementType, Product, ProductStatus } from '../types'
 import DataTable, { type Column } from '../components/common/DataTable'
 import MovementDialog from '../features/inventory/MovementDialog'
@@ -72,6 +75,15 @@ export default function Inventory() {
     setDialogOpen(true)
   }
 
+  const handleExport = async () => {
+    try {
+      const blob = await reportApi.exportInventory()
+      downloadBlob(blob, 'inventory.csv')
+    } catch {
+      setError('Failed to export inventory')
+    }
+  }
+
   const columns: Column<Product>[] = [
     { id: 'name', label: 'Name', render: (row) => <b>{row.name}</b> },
     { id: 'sku', label: 'SKU', render: (row) => <span style={{ fontFamily: 'monospace' }}>{row.sku}</span> },
@@ -127,6 +139,13 @@ export default function Inventory() {
         <Typography variant="h5" fontWeight={600}>
           Inventory
         </Typography>
+        <Button
+          variant="outlined"
+          startIcon={<FileDownloadOutlinedIcon />}
+          onClick={handleExport}
+        >
+          Export
+        </Button>
       </Toolbar>
 
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ my: 2 }} alignItems="center">

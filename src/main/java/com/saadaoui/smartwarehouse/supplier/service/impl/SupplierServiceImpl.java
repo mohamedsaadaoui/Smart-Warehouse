@@ -1,5 +1,7 @@
 package com.saadaoui.smartwarehouse.supplier.service.impl;
 
+import com.saadaoui.smartwarehouse.audit.AuditConstants;
+import com.saadaoui.smartwarehouse.audit.service.AuditLogService;
 import com.saadaoui.smartwarehouse.entity.Supplier;
 import com.saadaoui.smartwarehouse.exception.DuplicateResourceException;
 import com.saadaoui.smartwarehouse.exception.ResourceNotFoundException;
@@ -29,6 +31,8 @@ public class SupplierServiceImpl implements SupplierService {
 
     private final SupplierMapper supplierMapper;
 
+    private final AuditLogService auditLogService;
+
     @Override
     @Transactional
     public SupplierResponse create(SupplierRequest request) {
@@ -40,6 +44,9 @@ public class SupplierServiceImpl implements SupplierService {
         Supplier supplier = supplierRepository.save(supplierMapper.toEntity(request));
 
         log.info("Supplier created: {} ({})", supplier.getName(), supplier.getId());
+
+        auditLogService.record(AuditConstants.ACTION_CREATE, AuditConstants.ENTITY_SUPPLIER,
+                supplier.getId(), "Created supplier \"" + supplier.getName() + "\"");
 
         return toResponse(supplier, 0);
     }
@@ -64,7 +71,12 @@ public class SupplierServiceImpl implements SupplierService {
 
         log.info("Supplier updated: {} ({})", supplier.getName(), supplier.getId());
 
-        return toResponse(supplierRepository.save(supplier), 0);
+        Supplier saved = supplierRepository.save(supplier);
+
+        auditLogService.record(AuditConstants.ACTION_UPDATE, AuditConstants.ENTITY_SUPPLIER,
+                saved.getId(), "Updated supplier \"" + saved.getName() + "\"");
+
+        return toResponse(saved, 0);
     }
 
     @Override
@@ -108,6 +120,9 @@ public class SupplierServiceImpl implements SupplierService {
         supplierRepository.deleteById(id);
 
         log.info("Supplier deleted: {}", id);
+
+        auditLogService.record(AuditConstants.ACTION_DELETE, AuditConstants.ENTITY_SUPPLIER,
+                id, "Deleted supplier " + id);
     }
 
     private SupplierResponse toResponse(Supplier supplier, long productCount) {

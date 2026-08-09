@@ -17,6 +17,7 @@ import LocalShippingOutlinedIcon from '@mui/icons-material/LocalShippingOutlined
 import WarehouseOutlinedIcon from '@mui/icons-material/WarehouseOutlined'
 import SwapHorizOutlinedIcon from '@mui/icons-material/SwapHorizOutlined'
 import GroupOutlinedIcon from '@mui/icons-material/GroupOutlined'
+import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined'
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined'
 import { useAuth } from '../../context/AuthContext'
 
@@ -37,6 +38,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Inventory', path: '/inventory', icon: <WarehouseOutlinedIcon /> },
   { label: 'Movements', path: '/movements', icon: <SwapHorizOutlinedIcon /> },
   { label: 'Users', path: '/users', icon: <GroupOutlinedIcon />, adminOnly: true },
+  { label: 'Activity', path: '/activity', icon: <ReceiptLongOutlinedIcon />, adminOnly: true },
   { label: 'Settings', path: '/settings', icon: <SettingsOutlinedIcon /> },
 ]
 

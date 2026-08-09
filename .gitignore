@@ -31,3 +31,8 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Tooling ###
+.agents/
+skills-lock.json
+frontend/vite.log
