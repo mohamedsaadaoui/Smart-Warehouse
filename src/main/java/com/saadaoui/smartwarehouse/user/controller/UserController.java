@@ -3,6 +3,7 @@ package com.saadaoui.smartwarehouse.user.controller;
 import com.saadaoui.smartwarehouse.auth.service.UserService;
 import com.saadaoui.smartwarehouse.user.dto.CreateUserRequest;
 import com.saadaoui.smartwarehouse.user.dto.UpdateUserRequest;
+import com.saadaoui.smartwarehouse.user.dto.UserOptionResponse;
 import com.saadaoui.smartwarehouse.user.dto.UserResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -58,6 +60,13 @@ public class UserController {
             @RequestParam(defaultValue = "desc") String direction) {
 
         return userService.getAllUsers(search, enabled, createPageable(page, size, sortBy, direction));
+    }
+
+    @GetMapping("/options")
+    public List<UserOptionResponse> getRecipientOptions(
+            @RequestParam(required = false) String search) {
+
+        return userService.getRecipientOptions(search);
     }
 
     @DeleteMapping("/{id}")

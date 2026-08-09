@@ -11,12 +11,14 @@ import com.saadaoui.smartwarehouse.exception.DuplicateResourceException;
 import com.saadaoui.smartwarehouse.exception.ResourceNotFoundException;
 import com.saadaoui.smartwarehouse.user.dto.CreateUserRequest;
 import com.saadaoui.smartwarehouse.user.dto.UpdateUserRequest;
+import com.saadaoui.smartwarehouse.user.dto.UserOptionResponse;
 import com.saadaoui.smartwarehouse.user.dto.UserResponse;
 import com.saadaoui.smartwarehouse.user.mapper.UserMapper;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -123,6 +125,22 @@ public class UserServiceImpl implements UserService {
         return userRepository
                 .findAll(buildSpecification(search, enabled), pageable)
                 .map(userMapper::toResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<UserOptionResponse> getRecipientOptions(String search) {
+
+        String query = search == null ? "" : search.trim();
+
+        return userRepository.searchEnabledUsers(query, PageRequest.of(0, 50))
+                .stream()
+                .map(user -> new UserOptionResponse(
+                        user.getId(),
+                        user.getFirstName(),
+                        user.getLastName(),
+                        user.getEmail()))
+                .toList();
     }
 
     @Override

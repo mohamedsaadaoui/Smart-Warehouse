@@ -1,5 +1,5 @@
 import axiosInstance from './axios'
-import type { CreateUserRequest, Page, UpdateUserRequest, User } from '../types'
+import type { CreateUserRequest, Page, UpdateUserRequest, User, UserOption } from '../types'
 
 export interface UserQuery {
   page?: number
@@ -24,4 +24,9 @@ export const userApi = {
     axiosInstance.put<User>(`/users/${id}`, data).then((r) => r.data),
 
   delete: (id: string) => axiosInstance.delete<void>(`/users/${id}`),
+
+  getRecipientOptions: (search?: string) =>
+    axiosInstance
+      .get<UserOption[]>('/users/options', { params: { search } })
+      .then((r) => r.data),
 }

@@ -228,3 +228,30 @@ export interface AuditLogEntry {
   performedBy: string
   createdAt: string
 }
+
+export type NotificationType = 'USER_MESSAGE' | 'STOCK_ALERT'
+
+export interface AppNotification {
+  id: string
+  senderId: string | null
+  senderName: string | null
+  recipientId: string
+  title: string
+  message: string
+  type: NotificationType
+  read: boolean
+  createdAt: string
+}
+
+export interface SendNotificationRequest {
+  recipientId: string
+  title: string
+  message: string
+}
+
+export interface UserOption {
+  id: string
+  firstName: string
+  lastName: string
+  email: string
+}

@@ -7,39 +7,70 @@ import {
   IconButton,
   List,
   ListItemButton,
+  ListItemIcon,
   ListItemText,
   Menu,
+  Stack,
   Typography,
 } from '@mui/material'
 import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNoneOutlined'
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
+import CheckRoundedIcon from '@mui/icons-material/CheckRounded'
+import PersonOutlinedIcon from '@mui/icons-material/PersonOutlined'
+import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined'
 import { useNavigate } from 'react-router-dom'
 import { notificationApi } from '../../api/notificationApi'
-import type { StockAlert } from '../../types'
+import { useNotificationSocket } from '../../hooks/useNotificationSocket'
+import type { AppNotification, StockAlert } from '../../types'
+import ComposeNotificationDialog from './ComposeNotificationDialog'
 
-const POLL_INTERVAL_MS = 30_000
+const PAGE_SIZE = 20
+
+function relativeTime(iso: string): string {
+  const diffMs = Date.now() - new Date(iso).getTime()
+  const minutes = Math.floor(diffMs / 60_000)
+  if (minutes < 1) return 'just now'
+  if (minutes < 60) return `${minutes}m ago`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}h ago`
+  const days = Math.floor(hours / 24)
+  return `${days}d ago`
+}
 
 export default function NotificationBell() {
   const navigate = useNavigate()
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
-  const [count, setCount] = useState(0)
+  const [notifications, setNotifications] = useState<AppNotification[]>([])
+  const [unreadCount, setUnreadCount] = useState(0)
   const [alerts, setAlerts] = useState<StockAlert[]>([])
+  const [composeOpen, setComposeOpen] = useState(false)
+  const [sendError, setSendError] = useState<string | null>(null)
 
   const refresh = useCallback(async () => {
     try {
-      const [alertCount, alertList] = await Promise.all([
-        notificationApi.getAlertCount(),
-        notificationApi.getAlerts(),
+      const [page, count, alertList] = await Promise.all([
+        notificationApi.getMyNotifications({ page: 0, size: PAGE_SIZE }),
+        notificationApi.getUnreadCount(),
+        notificationApi.getStockAlerts(),
       ])
-      setCount(alertCount)
+      setNotifications(page.content)
+      setUnreadCount(count)
       setAlerts(alertList)
     } catch {
-      // ignore polling errors
+      // ignore refresh errors
     }
   }, [])
 
+  useNotificationSocket((notification) => {
+    setNotifications((prev) => [notification, ...prev.filter((n) => n.id !== notification.id)])
+    if (!notification.read) {
+      setUnreadCount((prev) => prev + 1)
+    }
+  })
+
   useEffect(() => {
     refresh()
-    const interval = setInterval(refresh, POLL_INTERVAL_MS)
+    const interval = setInterval(refresh, 30_000)
     return () => clearInterval(interval)
   }, [refresh])
 
@@ -50,15 +81,46 @@ export default function NotificationBell() {
 
   const handleClose = () => setAnchorEl(null)
 
+  const handleMarkRead = (id: string) => {
+    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)))
+    setUnreadCount((prev) => Math.max(0, prev - 1))
+    notificationApi.markAsRead(id).catch(() => {
+      // ignore sync errors; polling will reconcile
+    })
+  }
+
+  const handleMarkAllRead = async () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
+    setUnreadCount(0)
+    try {
+      await notificationApi.markAllRead()
+    } catch {
+      // ignore sync errors; polling will reconcile
+    }
+  }
+
   const openProduct = () => {
     handleClose()
     navigate('/products')
   }
 
+  const handleSend = async (data: { recipientId: string; title: string; message: string }) => {
+    setSendError(null)
+    try {
+      await notificationApi.send(data)
+      setComposeOpen(false)
+      refresh()
+    } catch {
+      setSendError('Failed to send the notification. Please try again.')
+    }
+  }
+
+  const badgeCount = unreadCount
+
   return (
     <>
-      <IconButton color="default" onClick={handleOpen}>
-        <Badge badgeContent={count} color="error">
+      <IconButton color="default" onClick={handleOpen} aria-label="Notifications">
+        <Badge badgeContent={badgeCount} color="error">
           <NotificationsNoneOutlinedIcon />
         </Badge>
       </IconButton>
@@ -66,19 +128,107 @@ export default function NotificationBell() {
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
         onClose={handleClose}
-        slotProps={{ paper: { sx: { width: 360, maxHeight: 420, mt: 1 } } }}
+        slotProps={{ paper: { sx: { width: 380, maxHeight: 480, mt: 1 } } }}
       >
         <Box sx={{ px: 2, py: 1.5 }}>
-          <Typography variant="subtitle1" fontWeight={600}>
-            Notifications
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Low stock alerts
-          </Typography>
+          <Stack direction="row" justifyContent="space-between" alignItems="center">
+            <Typography variant="subtitle1" fontWeight={600}>
+              Notifications
+            </Typography>
+            <IconButton
+              size="small"
+              color="primary"
+              onClick={() => {
+                handleClose()
+                setComposeOpen(true)
+              }}
+              aria-label="New notification"
+            >
+              <EditOutlinedIcon fontSize="small" />
+            </IconButton>
+          </Stack>
+          <Stack direction="row" justifyContent="space-between" alignItems="center">
+            <Typography variant="body2" color="text.secondary">
+              {unreadCount > 0 ? `${unreadCount} unread` : 'Messages'}
+            </Typography>
+            {unreadCount > 0 && (
+              <Box
+                component="button"
+                onClick={handleMarkAllRead}
+                sx={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                  p: 0,
+                  border: 'none',
+                  background: 'none',
+                  cursor: 'pointer',
+                  color: 'primary.main',
+                  fontSize: '0.8125rem',
+                  '&:hover': { textDecoration: 'underline' },
+                }}
+              >
+                <CheckRoundedIcon fontSize="inherit" />
+                Mark all as read
+              </Box>
+            )}
+          </Stack>
         </Box>
         <Divider />
-        {alerts.length === 0 ? (
+        {notifications.length === 0 ? (
           <Box sx={{ px: 2, py: 3, textAlign: 'center' }}>
+            <Typography variant="body2" color="text.secondary">
+              No messages yet
+            </Typography>
+          </Box>
+        ) : (
+          <List dense disablePadding>
+            {notifications.map((notification) => (
+              <ListItemButton
+                key={notification.id}
+                onClick={() => {
+                  if (!notification.read) handleMarkRead(notification.id)
+                }}
+                sx={{ alignItems: 'flex-start', px: 2, py: 1, bgcolor: notification.read ? 'transparent' : 'action.hover' }}
+              >
+                <ListItemIcon sx={{ minWidth: 36, mt: 0.5 }}>
+                  {notification.type === 'STOCK_ALERT' ? (
+                    <WarningAmberOutlinedIcon color="warning" fontSize="small" />
+                  ) : (
+                    <PersonOutlinedIcon color="primary" fontSize="small" />
+                  )}
+                </ListItemIcon>
+                <ListItemText
+                  primary={
+                    <Stack direction="row" justifyContent="space-between" gap={1}>
+                      <Typography variant="body2" fontWeight={notification.read ? 400 : 600} noWrap>
+                        {notification.title}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ flexShrink: 0 }}>
+                        {relativeTime(notification.createdAt)}
+                      </Typography>
+                    </Stack>
+                  }
+                  secondary={
+                    <Typography variant="caption" color="text.secondary" noWrap>
+                      {notification.senderName ? `From ${notification.senderName}` : 'System'} —{' '}
+                      {notification.message}
+                    </Typography>
+                  }
+                />
+              </ListItemButton>
+            ))}
+          </List>
+        )}
+        <Divider />
+        <Box sx={{ px: 2, py: 1 }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="center">
+            <Typography variant="subtitle2">Low stock alerts</Typography>
+            {alerts.length > 0 && <Chip label={alerts.length} size="small" color="warning" />}
+          </Stack>
+        </Box>
+        {alerts.length === 0 ? (
+          <Box sx={{ px: 2, py: 1.5, textAlign: 'center' }}>
             <Typography variant="body2" color="text.secondary">
               No low stock alerts right now
             </Typography>
@@ -93,7 +243,7 @@ export default function NotificationBell() {
               >
                 <ListItemText
                   primary={
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
+                    <Stack direction="row" justifyContent="space-between" gap={1}>
                       <Typography variant="body2" fontWeight={500} noWrap>
                         {alert.productName}
                       </Typography>
@@ -102,7 +252,7 @@ export default function NotificationBell() {
                         color={alert.type === 'OUT_OF_STOCK' ? 'error' : 'warning'}
                         size="small"
                       />
-                    </Box>
+                    </Stack>
                   }
                   secondary={
                     <Typography variant="caption" color="text.secondary">
@@ -116,6 +266,15 @@ export default function NotificationBell() {
           </List>
         )}
       </Menu>
+      <ComposeNotificationDialog
+        open={composeOpen}
+        error={sendError}
+        onClose={() => {
+          setComposeOpen(false)
+          setSendError(null)
+        }}
+        onSubmit={handleSend}
+      />
     </>
   )
 }

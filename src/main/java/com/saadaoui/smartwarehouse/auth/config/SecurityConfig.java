@@ -70,8 +70,11 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
+                                "/ws/**",
                                 "/error"
                         ).permitAll()
+                        .requestMatchers("/api/users/options")
+                                .authenticated()
                         .requestMatchers("/api/users/**", "/api/audit-logs/**")
                                 .hasAuthority("ADMIN")
                         .anyRequest().authenticated()
