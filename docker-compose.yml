@@ -1,18 +1,53 @@
 services:
+
   postgres:
     image: postgres:17
-    container_name: smart-warehouse-db
-
+    container_name: sw-postgres
     environment:
       POSTGRES_DB: smart_warehouse
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-
     ports:
       - "5432:5432"
-
     volumes:
       - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: .
+    container_name: sw-backend
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: jdbc:postgresql://postgres:5432/smart_warehouse
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set (random 32+ chars)}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@smartwarehouse.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin@123}
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+  frontend:
+    build: ./frontend
+    container_name: sw-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      backend:
+        condition: service_healthy
 
 volumes:
   postgres-data:

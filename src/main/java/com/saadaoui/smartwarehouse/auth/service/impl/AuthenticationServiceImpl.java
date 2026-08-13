@@ -11,6 +11,7 @@ import com.saadaoui.smartwarehouse.auth.repository.RoleRepository;
 import com.saadaoui.smartwarehouse.auth.repository.UserRepository;
 import com.saadaoui.smartwarehouse.auth.security.JwtService;
 import com.saadaoui.smartwarehouse.auth.service.AuthenticationService;
+import com.saadaoui.smartwarehouse.exception.DuplicateResourceException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -35,7 +36,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public AuthResponse register(RegisterRequest request) {
 
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already exists");
+            throw new DuplicateResourceException("Email already exists");
         }
 
         Role role = roleRepository.findByName("EMPLOYEE")
