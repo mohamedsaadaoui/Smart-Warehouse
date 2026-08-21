@@ -36,3 +36,17 @@ build/
 .agents/
 skills-lock.json
 frontend/vite.log
+
+### Environment & secrets ###
+.env
+.env.*
+
+### Logs ###
+*.log
+
+### Frontend build & test output ###
+frontend/dist/
+frontend/coverage/
+frontend/playwright-report/
+frontend/test-results/
+*.tsbuildinfo
