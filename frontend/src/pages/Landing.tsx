@@ -17,7 +17,6 @@ import {
   List,
   ListItem,
   ListItemButton,
-  ListItemIcon,
   ListItemText,
   Stack,
   Typography,
@@ -32,7 +31,6 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
 } from 'recharts'
 import WarehouseOutlinedIcon from '@mui/icons-material/WarehouseOutlined'
 import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined'
@@ -980,8 +978,6 @@ function HowItWorks() {
 }
 
 function WhyUs() {
-  const theme = useTheme()
-
   return (
     <Box component="section" id="why-us" sx={{ bgcolor: 'background.paper', py: { xs: 8, md: 12 } }}>
       <Container maxWidth="lg">

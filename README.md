@@ -4,6 +4,11 @@
 [![Java](https://img.shields.io/badge/Java-21-ED8B00?logo=openjdk&logoColor=white)](https://adoptium.net)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
 [![Docker](https://img.shields.io/badge/Docker-compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev)
+[![Vite](https://img.shields.io/badge/Vite-6.0-646CFF?logo=vite&logoColor=white)](https://vitejs.dev)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38B2AC?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
+[![TanStack Query](https://img.shields.io/badge/TanStack%20Query-5.59-FF4154?logo=reactquery&logoColor=white)](https://tanstack.com/query)
 
 Smart Warehouse is a full-stack warehouse and inventory management platform that replaces manual (spreadsheet) stock tracking with a real-time system: multi-warehouse stock movements, low-stock alerts, multi-supplier management, and an analytics dashboard — secured with JWT and role-based access control.
 
@@ -25,11 +30,15 @@ Smart Warehouse is a full-stack warehouse and inventory management platform that
 
 ### Frontend
 
-- React 19, Vite, TypeScript
-- Material UI (MUI 6), React Hook Form + Zod
-- TanStack Query-style API layer with Axios interceptors (JWT injection)
+- React 19, Vite 6, TypeScript 5.7 (strict mode)
+- Tailwind CSS 3.4 + shadcn/ui-style components
+- TanStack Query (React Query) v5 for server state management
+- Material UI (MUI 6) + Headless UI primitives
+- React Hook Form + Zod for validation
 - STOMP (via `@stomp/stompjs`) + SockJS for real-time notifications
-- Recharts dashboard, React Router with protected/admin routes
+- Recharts for analytics, React Router v7 with protected/admin routes
+- Testing: Vitest + React Testing Library + Playwright
+- PDF Export: jsPDF + jsPDF-AutoTable
 
 ## Features
 
@@ -38,11 +47,12 @@ Smart Warehouse is a full-stack warehouse and inventory management platform that
 - **Multi-warehouse inventory** — stock entries, exits and inter-site movements with `MovementType`
 - **Suppliers** — multi-supplier management
 - **Dashboard** — counts by status/category, low-stock list, recent movements, monthly stats
-- **Reports** — CSV export of stock/inventory data
+- **Advanced Reports** — interactive charts (bar, line, pie), supplier performance, PDF export with jsPDF
 - **Notifications** — in-app notifications pushed in real time via WebSocket (including user-to-user)
 - **Audit log** — records create/update/delete/login/register actions (ADMIN)
 - **User management** — admin-only user CRUD with role assignment
 - **Settings** — configurable application settings (ADMIN)
+- **Type-safe API layer** — Axios interceptors with JWT injection, Zod schema validation
 
 ## Getting Started
 
@@ -50,13 +60,15 @@ Smart Warehouse is a full-stack warehouse and inventory management platform that
 
 - JDK 21
 - Node.js 20+
-- Docker (for PostgreSQL)
+- Docker & Docker Compose
 
 ### 1. Start the database
 
 ```bash
 docker compose up -d
 ```
+
+This starts PostgreSQL 17 with health checks and initialization scripts.
 
 ### 2. Run the backend
 
@@ -66,6 +78,34 @@ docker compose up -d
 
 The API starts on `http://localhost:8080` (Swagger UI: http://localhost:8080/swagger-ui.html).
 
+### Full Stack with Docker Compose
+
+```bash
+# Build and start all services
+docker compose up -d --build
+
+# View logs
+docker compose logs -f
+
+# Stop services
+docker compose down
+
+# Stop and remove volumes (database data)
+docker compose down -v
+```
+
+Services:
+- **PostgreSQL**: `localhost:5432`
+- **Backend API**: `localhost:8080`
+- **Frontend**: `localhost:5173`
+
+Environment variables (create `.env` file):
+```env
+JWT_SECRET=your-super-secret-jwt-key-min-32-chars
+ADMIN_EMAIL=admin@yourdomain.com
+ADMIN_PASSWORD=SecurePassword123
+```
+
 ### 3. Run the frontend
 
 ```bash
@@ -74,7 +114,27 @@ npm install
 npm run dev
 ```
 
-The frontend starts on `http://localhost:5173` and proxies `/api` and `/ws` to the backend.
+The frontend starts on `http://localhost:5173` (Vite) and proxies `/api` and `/ws` to the backend.
+
+### Development Commands (Frontend)
+
+```bash
+cd frontend
+
+# Development
+npm run dev           # Start Vite dev server
+npm run build         # Type check + production build
+npm run preview       # Preview production build
+
+# Testing
+npm run test          # Watch mode
+npm run test:run      # Single run with coverage
+npm run test:ui       # Visual test UI
+
+# Code Quality
+npm run lint          # ESLint
+npm run format        # Prettier
+```
 
 On first startup, `DataInitializer` seeds the `ADMIN`, `MANAGER` and `EMPLOYEE` roles.
 
@@ -88,11 +148,22 @@ On first startup, `DataInitializer` seeds the `ADMIN`, `MANAGER` and `EMPLOYEE` 
 | Movements | `/api/movements/**` | Authenticated |
 | Suppliers | `/api/suppliers/**` | Authenticated |
 | Dashboard | `/api/dashboard/**` | Authenticated |
-| Reports | `/api/reports/**` (CSV export) | Authenticated |
+| Reports | `/api/reports/**` (JSON, PDF export) | Authenticated |
 | Notifications | `/api/notifications/**` | Authenticated |
 | Settings | `/api/settings/**` | ADMIN |
 | Users | `/api/users/**` | ADMIN |
 | Audit logs | `/api/audit-logs/**` | ADMIN |
+
+## Report Endpoints
+
+| Endpoint | Method | Description |
+| -------- | ------ | ----------- |
+| `/api/reports/inventory` | GET | Full inventory analytics (counts, value, movements, top products, supplier performance) |
+| `/api/reports/inventory/pdf` | GET | PDF export of inventory report |
+| `/api/reports/movements` | GET | Stock movement analytics with date filtering |
+| `/api/reports/products` | GET | Product performance report |
+
+All report endpoints support optional `startDate` and `endDate` query parameters (ISO 8601 format).
 
 ## Project Structure
 
@@ -104,7 +175,7 @@ com.saadaoui.smartwarehouse
 ├── movement      # stock movements (in / out / transfer)
 ├── notification  # notifications + real-time WebSocket push
 ├── product       # products and stock status
-├── report        # CSV reports
+├── report        # CSV + PDF reports with analytics
 ├── settings      # application settings
 ├── supplier      # suppliers
 ├── user          # user management (ADMIN)
@@ -114,7 +185,31 @@ com.saadaoui.smartwarehouse
 └── exception     # centralized error handling
 ```
 
+### Frontend Structure
+
+```
+frontend/src
+├── api           # API client, endpoints, types
+├── components    # React components
+│   ├── ui        # shadcn/ui-style reusable components
+│   ├── layout    # Layout, Sidebar, Navbar
+│   └── common    # Loading, ErrorBoundary, etc.
+├── context       # React Context providers (Auth, Theme)
+├── features      # Feature-specific components
+├── hooks         # Custom React hooks
+├── pages         # Page components (lazy-loaded)
+├── routes        # React Router configuration
+├── types         # TypeScript types
+├── utils         # Utility functions (cn, download, etc.)
+├── test          # Vitest setup and utilities
+├── App.tsx       # Root component
+├── main.tsx      # Entry point with providers
+└── index.css     # Tailwind CSS imports
+```
+
 ## Testing
+
+### Backend
 
 The backend follows a testing pyramid:
 
@@ -129,13 +224,76 @@ Run the full suite with coverage:
 
 Coverage is enforced with **JaCoCo** (≥70% instruction coverage gate) and the report is generated at `target/site/jacoco/index.html`.
 
+### Frontend
+
+- **Unit tests** — Vitest + React Testing Library
+- **E2E tests** — Playwright (to be configured)
+- **Type checking** — TypeScript strict mode (`tsc --noEmit`)
+- **Linting** — ESLint with React hooks rules
+
+```bash
+cd frontend
+npm run test:run    # Run tests with coverage
+npm run lint        # Lint check
+```
+
 ## CI/CD
 
 `.github/workflows/ci.yml` runs on every push/PR to `main`:
 
-- Backend: `mvnw verify` (tests + Testcontainers + JaCoCo gate)
-- Frontend: `npm ci && npm run build`
-- Docker: builds the backend image and pushes it to GitHub Container Registry
+### Backend
+- `mvnw verify` — tests + Testcontainers + JaCoCo coverage gate (≥70%)
+- Codecov upload for coverage tracking
+
+### Frontend
+- ESLint + TypeScript strict type checking
+- Vitest unit tests with coverage
+- Production build (`npm run build`)
+
+### Security
+- Trivy filesystem vulnerability scan
+- SARIF upload to GitHub Security tab
+
+### Docker
+- Multi-stage builds for backend (Maven → JRE Alpine) and frontend (Node → Nginx Alpine)
+- Non-root user execution
+- Build & push to GitHub Container Registry (GHCR) with BuildKit caching
+- Separate images for backend and frontend
+
+### Deployment
+- Staging deployment on merge to `main` (manual approval via environment)
+
+## Recent Improvements (v0.2.0)
+
+### Frontend Enhancements
+- **Component Library**: Added shadcn/ui-style components with Tailwind CSS (Button, Card, Input, Table, Badge, Skeleton)
+- **State Management**: Integrated TanStack Query (React Query) v5 for server state with caching, retries, and deduplication
+- **TypeScript Strictness**: Enabled strict mode with `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `noUnusedLocals/Parameters`
+- **Path Aliases**: Configured `@/` imports for cleaner imports
+- **Testing Setup**: Vitest + React Testing Library + jsdom with coverage reporting
+- **Toast Notifications**: react-hot-toast for user feedback
+- **Utility Functions**: `cn()` helper (clsx + tailwind-merge) for conditional class names
+
+### Docker & Infrastructure
+- **Multi-stage Builds**: Optimized backend (Maven → JRE Alpine) and frontend (Node → Nginx Alpine) images
+- **Security Hardening**: Non-root users, minimal base images, health checks
+- **Resource Limits**: Memory limits and reservations for all containers
+- **Database Initialization**: PostgreSQL extensions (uuid-ossp, pg_trgm, btree_gin) via init scripts
+- **Network Isolation**: Dedicated Docker network
+
+### CI/CD Pipeline
+- **Parallel Jobs**: Backend, Frontend, Security scans run in parallel
+- **Security Scanning**: Trivy vulnerability scanner with SARIF upload to GitHub Security
+- **Separate Docker Images**: Backend and frontend images pushed independently to GHCR
+- **BuildKit Caching**: GitHub Actions cache for faster builds
+- **Staging Deployment**: Environment-based deployment with manual approval
+
+### New Feature: Advanced Reports
+- **Interactive Charts**: Bar charts (products by category, inventory value), Line chart (stock movements), Pie chart (top products)
+- **Supplier Performance Table**: Sortable table with product counts and total values
+- **PDF Export**: One-click PDF generation with jsPDF + jsPDF-AutoTable
+- **Date Range Filtering**: Dynamic date range picker for report period selection
+- **Real-time Data**: Powered by TanStack Query with automatic refetching
 
 ## License
 

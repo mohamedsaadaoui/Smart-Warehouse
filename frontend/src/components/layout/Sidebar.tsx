@@ -1,5 +1,4 @@
 import {
-  Box,
   Drawer,
   List,
   ListItemButton,
@@ -19,6 +18,7 @@ import SwapHorizOutlinedIcon from '@mui/icons-material/SwapHorizOutlined'
 import GroupOutlinedIcon from '@mui/icons-material/GroupOutlined'
 import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined'
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined'
+import AssessmentOutlinedIcon from '@mui/icons-material/AssessmentOutlined'
 import { useAuth } from '../../context/AuthContext'
 
 const DRAWER_WIDTH = 240
@@ -37,6 +37,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Suppliers', path: '/suppliers', icon: <LocalShippingOutlinedIcon /> },
   { label: 'Inventory', path: '/inventory', icon: <WarehouseOutlinedIcon /> },
   { label: 'Movements', path: '/movements', icon: <SwapHorizOutlinedIcon /> },
+  { label: 'Reports', path: '/reports', icon: <AssessmentOutlinedIcon /> },
   { label: 'Users', path: '/users', icon: <GroupOutlinedIcon />, adminOnly: true },
   { label: 'Activity', path: '/activity', icon: <ReceiptLongOutlinedIcon />, adminOnly: true },
   { label: 'Settings', path: '/settings', icon: <SettingsOutlinedIcon /> },

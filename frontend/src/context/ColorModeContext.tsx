@@ -6,6 +6,7 @@ import {
   type ReactNode,
 } from 'react'
 import { ThemeProvider } from '@mui/material/styles'
+import CssBaseline from '@mui/material/CssBaseline'
 import createAppTheme from '../theme'
 
 interface ColorModeContextValue {
@@ -42,11 +43,15 @@ export function ColorModeProvider({ children }: { children: ReactNode }) {
 
   return (
     <ColorModeContext.Provider value={colorMode}>
-      <ThemeProvider theme={theme}>{children}</ThemeProvider>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        {children}
+      </ThemeProvider>
     </ColorModeContext.Provider>
   )
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useColorMode() {
   const ctx = useContext(ColorModeContext)
   if (!ctx) throw new Error('useColorMode must be used within ColorModeProvider')

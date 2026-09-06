@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -45,6 +46,39 @@ public interface ProductRepository
     interface CategoryCountProjection {
         String getName();
         long getProductCount();
+    }
+
+    @Query("SELECT COALESCE(SUM(p.price * p.quantity), 0) FROM Product p")
+    BigDecimal totalInventoryValue();
+
+    @Query("""
+            SELECT c.name AS name, COUNT(p.id) AS productCount,
+                   COALESCE(SUM(p.price * p.quantity), 0) AS totalValue
+            FROM Product p JOIN p.category c
+            GROUP BY c.name
+            ORDER BY productCount DESC
+            """)
+    List<CategoryBreakdown> categoryBreakdown();
+
+    interface CategoryBreakdown {
+        String getName();
+        long getProductCount();
+        BigDecimal getTotalValue();
+    }
+
+    @Query("""
+            SELECT s.name AS name, COUNT(p.id) AS productCount,
+                   COALESCE(SUM(p.price * p.quantity), 0) AS totalValue
+            FROM Product p JOIN p.supplier s
+            GROUP BY s.id, s.name
+            ORDER BY totalValue DESC
+            """)
+    List<SupplierPerformance> supplierPerformance();
+
+    interface SupplierPerformance {
+        String getName();
+        long getProductCount();
+        BigDecimal getTotalValue();
     }
 
 }

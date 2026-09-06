@@ -16,6 +16,7 @@ const Movements = lazy(() => import('../pages/Movements'))
 const Users = lazy(() => import('../pages/Users'))
 const Activity = lazy(() => import('../pages/Activity'))
 const Settings = lazy(() => import('../pages/Settings'))
+const Reports = lazy(() => import('../pages/Reports'))
 
 export default function AppRoutes() {
   return (
@@ -36,6 +37,7 @@ export default function AppRoutes() {
               <Route path="/activity" element={<Activity />} />
             </Route>
             <Route path="/settings" element={<Settings />} />
+            <Route path="/reports" element={<Reports />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

@@ -2,6 +2,8 @@ package com.saadaoui.smartwarehouse.report.controller;
 
 import com.saadaoui.smartwarehouse.entity.MovementType;
 import com.saadaoui.smartwarehouse.product.dto.ProductStatus;
+import com.saadaoui.smartwarehouse.report.dto.InventoryReportResponse;
+import com.saadaoui.smartwarehouse.report.service.AnalyticsReportService;
 import com.saadaoui.smartwarehouse.report.service.CsvReportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -13,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -22,6 +25,21 @@ import java.util.UUID;
 public class ReportController {
 
     private final CsvReportService csvReportService;
+
+    private final AnalyticsReportService analyticsReportService;
+
+    @GetMapping(value = "/inventory/analytics", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<InventoryReportResponse> inventoryAnalytics(
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
+
+        LocalDateTime from = startDate != null && !startDate.isBlank()
+                ? LocalDate.parse(startDate).atStartOfDay() : null;
+        LocalDateTime to = endDate != null && !endDate.isBlank()
+                ? LocalDate.parse(endDate).plusDays(1).atStartOfDay() : null;
+
+        return ResponseEntity.ok(analyticsReportService.generateInventoryReport(from, to));
+    }
 
     @GetMapping(value = "/products", produces = "text/csv")
     public ResponseEntity<byte[]> exportProducts(
